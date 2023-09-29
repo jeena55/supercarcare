@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Seat` ADD COLUMN `price` INTEGER NOT NULL DEFAULT 100;

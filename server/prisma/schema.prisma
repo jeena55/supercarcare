@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id              Int             @id @default(autoincrement())
+  title           String
+  duration        Int
+  synopsis        String?
+  imageUrl        String?
+  trailerUrl      String?
+  movieCategories MovieCategory[]
+  MovieSchedule   MovieSchedule[]
+  previewURL      String?
+}
+
+model MovieCategory {
+  movieId    Int
+  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, categoryId])
+}
+
+model Category {
+  id       Int             @id @default(autoincrement())
+  name     String
+  category MovieCategory[]
+}
+
+model Theatre {
+  id             Int             @id @default(autoincrement())
+  name           String
+  theatreType    THEATRE_TYPE?   @default(TWOD)
+  seats          Seat[]
+  movieSchedules MovieSchedule[]
+}
+
+enum THEATRE_TYPE {
+  TWOD
+  THREED
+  FOURD
+  IMAX
+}
+
+model MovieSchedule {
+  id        Int      @id @default(autoincrement())
+  startTime DateTime
+  movieId   Int
+  theatreId Int
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  theatre   Theatre  @relation(fields: [theatreId], references: [id], onDelete: Cascade)
+  tickets   Ticket[]
+}
+
+model Ticket {
+  id            Int           @id @default(autoincrement())
+  price         Int // ราคา
+  accountId     Int
+  scheduleId    Int
+  seatId        Int
+  reservationId Int
+  // Ticket เนี่ยจะต้องสามารถบอกข้อมูลได้หมดเลยว่า ตั๋วนี้ จองโดยใคร , หนังรอบไหน , ที่นั่งไหน 
+  account       Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  movieSchedule MovieSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  seat          Seat          @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  reservation   Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, seatId]) //ต้องคนละเวลา
+}
+
+model Seat {
+  id        Int       @id @default(autoincrement())
+  number    String
+  seatType  SEAT_TYPE @default(NORMAL)
+  theatreId Int
+  theatre   Theatre   @relation(fields: [theatreId], references: [id], onDelete: Cascade)
+  price     Int       @default(100)
+  tickets   Ticket[] // เพราะว่า ที่นั่งนี้ อาจจะมีหลายตั๋วแต่ว่า แต่ละตั๋วมันคนละเวลากัน! แต่เป็นที่นั่งเดียวกัน
+}
+
+enum SEAT_TYPE {
+  NORMAL
+  HONEYMOON
+  FIRSTCLASS
+  IMAX
+  FOURDX
+}
+
+model Reservation {
+  id              Int      @id @default(autoincrement())
+  reservationCode String
+  createdAt       DateTime @default(now())
+  tickets         Ticket[]
+}
+
+model Account {
+  id           Int      @id @default(autoincrement())
+  username     String
+  password     String
+  email        String   @unique
+  tickets      Ticket[]
+  profile      Profile?
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+  role         Role     @default(USER)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Profile {
+  id            Int     @id
+  account       Account @relation(fields: [id], references: [id])
+  first_name    String
+  last_name     String
+  nickname      String
+  idcard_number String
+  phone         String
+}

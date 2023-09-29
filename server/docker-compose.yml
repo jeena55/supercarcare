@@ -1,0 +1,24 @@
+name: "movie-database"
+services:
+  mysql:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "moviedb"
+    ports:
+      - "3306:3306"
+    volumes:
+      - movie-database-volume:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+    depends_on:
+      - mysql
+volumes:
+  movie-database-volume:

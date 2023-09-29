@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  account_id   Int      @id @default(autoincrement())
+  username     String
+  password     String
+  email        String
+  Profile      Profile?
+  Ticket       Ticket[]
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+}
+
+model Profile {
+  profile_id    Int     @id
+  account_id    Account @relation(fields: [profile_id], references: [account_id])
+  first_name    String
+  last_name     String
+  nickname      String
+  idcard_number String
+  phone         String
+}
+
+enum MEMBER_LEVEL {
+  SILVER
+  BRONZE
+  GOLD
+}
+
+model Ticket {
+  ticket_id    Int      @id
+  account_id   Int
+  account      Account  @relation(fields: [account_id], references: [account_id])
+  price        Int
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+  Seat         Seat?    @relation(fields: [ticket_id], references: [seat_id])
+  // ticket_id มัน depence on seat_id แต่ seat_id มันไม่ depence on ticket_id แต่! มันก็มีค่าเท่ากับ ticket_id อยู่แล้ว
+}
+
+model Seat {
+  seat_id           Int           @id @default(autoincrement())
+  ticket            Ticket?
+  seat_number       String
+  seat_type         SEAT_TYPE
+  // map to movie_schedule ทำให้เรารู้ข้อมูลทุกอย่างจาก seat ได้
+  movie_schedule    MovieSchedule @relation(fields: [movie_schedule_id], references: [schedule_id])
+  movie_schedule_id Int
+}
+
+enum SEAT_TYPE {
+  NORMAL
+  HONEYMOON
+  FIRSTCLASS
+  IMAX
+  FOURDX
+}
+
+model Theatre {
+  theatre_id     Int             @id @default(autoincrement())
+  theatre_type   THEATRE_TYPE    @default(TWOD)
+  movie_schedule MovieSchedule[]
+  staff_theatre  StaffTheatre[] // หนัง 1 โรงมีพนักงานหลายคน
+}
+
+enum THEATRE_TYPE {
+  TWOD
+  THREED
+  FOURD
+  IMAX
+}
+
+model MovieSchedule {
+  schedule_id Int      @id @default(autoincrement())
+  movie_id    Int
+  movie       Movie    @relation(fields: [movie_id], references: [movie_id])
+  theatre_id  Int
+  theatre     Theatre  @relation(fields: [theatre_id], references: [theatre_id])
+  date        DateTime
+  period      Int
+  Seat        Seat[]
+
+  // @@id([movie_id, theatre_id, date, period]) // แบบเก่ามันเยอะ และ ยากต่อการเพิ่มข้อมูล
+}
+
+model Movie {
+  movie_id       Int             @id @default(autoincrement())
+  title          String          @unique
+  description    String          @db.LongText
+  duration       Int // นาที
+  poster_src     String
+  movie_schedule MovieSchedule[]
+  movie_category MovieCategory[]
+}
+
+model MovieCategory {
+  movie_id    Int
+  movie       Movie    @relation(fields: [movie_id], references: [movie_id])
+  category_id Int
+  category    Category @relation(fields: [category_id], references: [category_id])
+
+  @@id([movie_id, category_id])
+}
+
+model Category {
+  category_id Int             @id @default(autoincrement())
+  name        String
+  category    MovieCategory[]
+}
+
+model Staff {
+  staff_id      Int            @id @default(autoincrement())
+  first_name    String
+  last_name     String
+  nickname      String
+  staff_theatre StaffTheatre[]
+}
+
+model StaffTheatre {
+  id         Int     @id @default(autoincrement())
+  staff_id   Int
+  staff      Staff   @relation(fields: [staff_id], references: [staff_id])
+  theatre_id Int
+  theatre    Theatre @relation(fields: [theatre_id], references: [theatre_id])
+}
