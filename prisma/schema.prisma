@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  account_id   Int        @id @default (autoincrement())
+  account_name String     @unique
+  password     String
+  role_id      Int
+  role         ROLE
+}
+
+enum ROLE {
+  CUSTOMER
+  EMPLOYEE
+}
+
+model Employee {
+  emp_id       Int      @id @default(autoincrement())
+  job_id       Int
+  emp_name     String
+  emp_surname  String
+  emp_phone    String
+  emp_salary   Int
+  emp_hiredate DateTime
+  account_id   Int
+  account      Account  @relation(fields: [account_id], references: [account_id], onDelete: CASCADE)
+  job_role     JobRole  @relation(fields: [job_id], references: [job_id], onDelete: CASCADE)
+
+  // Define foreign key constraints
+  @@index([job_id], name: "employee_job_role_job_id")
+  @@index([account_id], name: "employee_account_account_id")
+}
+
+
+model JobRole {
+  job_id      Int       @id @default(autoincrement())
+  job_name    String
+}
+
+model Customer {
+  cust_id      Int      @id @default(autoincrement())
+  cust_name    String
+  cust_surname String
+  cust_phone   String?
+  cust_email   String
+  account_id   Int      @unique
+  account      Account  @relation(fields: [account_id], references: [account_id], onDelete: Cascade)
+
+  // Define foreign key constraint
+  @@index([account_id], name: "customer_user_user_id")
+}
+
+model Booking {
+  booking_id        Int      @id @default(autoincrement())
+  cust_id           Int
+  car_id            Int
+  service_type      SERVICE_TYPE
+  appointmentDate   DateTime
+  description       String?
+  customer          Customer @relation(fields: [cust_id], references: [cust_id], onDelete: Cascade)
+  car               Car @relation(fields: [car_id], references: [car_id], onDelete: Cascade)
+}
+
+enum SERVICE_TYPE {
+  CAR_INSPECTION
+  CAR_REPAIR
+  CAR_WASHING
+}
+
+model Schedule {
+  schedule_id    Int     @id @default(autoincrement())
+  emp_id         Int
+  booking_id     Int
+  scheduled_date DateTime
+  scheduled_time Time
+  employee       Employee @relation(fields: [emp_id], references: [emp_id], onDelete: Cascade)
+  booking        Booking @relation(fields: [booking_id], references: [booking_id], onDelete: Cascade)
+}
+
+model Progress {
+  progress_id       Int       @id @default(autoincrement())
+  booking_id        Int
+  step_description  String?
+  step_status       String
+  timestamp         DateTime
+  booking           Booking   @relation(fields: [booking_id], references: [booking_id], onDelete: Cascade)
+
+  // Define foreign key constraints
+  @@index([booking_id], name: "progress_booking_booking_id")
+}
+
+model Payment {
+  payment_id     Int       @id @default(autoincrement())
+  booking_id     Int
+  amount_money  Int
+  payment_method String
+  banking_name   String?
+  account_number String?
+  payment_date   Date
+  payment_slip   Bytes? // Assuming your database supports BLOB data type
+
+  booking        Booking   @relation(fields: [booking_id], references: [booking_id], onDelete: Cascade)
+
+  // Define foreign key constraints
+  @@index([booking_id], name: "payment_booking_booking_id")
+}
+
+model Car {
+  car_id         Int      @id
+  license_plate String   @unique
+  cust_id        Int
+  car_brand      String
+  customer       Customer @relation(fields: [cust_id], references: [cust_id], onDelete: Cascade)
+
+  // Define foreign key constraint
+  @@index([cust_id], name: "car_customer_cust_id")
+}
+
+model Stock {
+  stock_id    Int      @id @default(autoincrement())
+  stock_name  String
+  stock_num   Int
+}
+
+model CarHistory {
+  car_id          Int        // Composite primary key part 1
+  stock_id        Int        // Composite primary key part 2
+  usage_date      DateTime
+  quantity_usage  Int
+
+  // Define composite primary key constraint
+  @@id([car_id, stock_id])
+
+  // Define foreign key constraints
+  car             Car        @relation(fields: [car_id], references: [car_id])
+  stock           Stock      @relation(fields: [stock_id], references: [stock_id])
+}
+
+
+
+
+
+
+
+
+
+
